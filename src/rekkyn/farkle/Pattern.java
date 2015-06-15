@@ -67,6 +67,7 @@ public class Pattern {
         Collections.sort(countRollNumbers);
         Collections.reverse(countRollNumbers);
         
+        if (countRollNumbers.size() < countStrings.size()) return false;
         for (int i = 0; i < countStrings.size(); i++) {
             if (countRollNumbers.get(i) < countStrings.get(i)) return false;
         }

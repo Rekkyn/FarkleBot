@@ -1,5 +1,6 @@
 package rekkyn.farkle;
 
+import java.util.Collections;
 import java.util.List;
 
 public class ScoreSet {
@@ -39,7 +40,10 @@ public class ScoreSet {
     @Override
     public String toString() {
         String resultString = "";
-        if (result != null) resultString += result.toString();
+        if (result != null) {
+            Collections.sort(result);
+            resultString += result.toString();
+        }
         return name + resultString;
     }
 }
