@@ -29,8 +29,13 @@ public class Farkle {
     public void run() {
         Dice dice = new Dice(totalDice);
         System.out.println(dice);
-        List<ScoreSet> scores = dice.findScoreSets();
-        System.out.println(scores);
+        for (List<ScoreSet> list : dice.getScoreSetCombinations()) {
+            int score = 0;
+            for (ScoreSet s : list) {
+                score += s.getScore();
+            }
+            System.out.println(list + " " + score);
+        }
     }
     
     public class Dice {
@@ -57,6 +62,53 @@ public class Farkle {
                 roll[i] = i < diceNum ? rand.nextInt(6) + 1 : 0;
             }
             return roll;
+        }
+        
+        public Set<List<ScoreSet>> getScoreSetCombinations() {
+            Set<List<ScoreSet>> combinations = new HashSet<List<ScoreSet>>();
+            combinations.add(new ArrayList<ScoreSet>());
+            
+            // for every item in the original list
+            for (ScoreSet item : findScoreSets()) {
+                Set<List<ScoreSet>> newCombinations = new HashSet<List<ScoreSet>>();
+                
+                for (List<ScoreSet> subset : combinations) {
+                    // copy all of the current powerset's subsets
+                    newCombinations.add(subset);
+                    
+                    // plus the subsets appended with the current item
+                    List<ScoreSet> newSubset = new ArrayList<ScoreSet>(subset);
+                    
+                    List<Integer> rollList = new ArrayList<Integer>();
+                    boolean canAdd = true;
+                    for (int i : roll)
+                        rollList.add(i);
+                    
+                    for (ScoreSet ss : subset) {
+                        for (int i : ss.getResult()) {
+                            if (rollList.contains(i)) {
+                                rollList.remove((Object) i);
+                            }
+                        }
+                    }
+                    for (int i : item.getResult()) {
+                        if (!rollList.contains(i)) {
+                            canAdd = false;
+                            break;
+                        }
+                        rollList.remove((Object) i);
+                    }
+                    
+                    if (canAdd) newSubset.add(item);
+                    newCombinations.add(newSubset);
+                }
+                
+                // powerset is now powerset of list.subList(0,
+                // list.indexOf(item)+1)
+                combinations = newCombinations;
+            }
+            combinations.remove(new ArrayList<ScoreSet>());
+            return combinations;
         }
         
         public List<ScoreSet> findScoreSets() {
