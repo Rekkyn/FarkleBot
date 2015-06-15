@@ -14,8 +14,12 @@ public class Farkle {
     }
     
     public Farkle() {
-        scoreSets.add(new ScoreSet("1", new Pattern(1), 100));
-        scoreSets.add(new ScoreSet("5", new Pattern(5), 50));
+        // scoreSets.add(new ScoreSet("1", new Pattern(1), 100));
+        // scoreSets.add(new ScoreSet("5", new Pattern(5), 50));
+        // scoreSets.add(new ScoreSet("lol", new Pattern("X", "Y", 3, "X"),
+        // 50));
+        scoreSets.add(new ScoreSet("lol", new Pattern(1, 3), 50));
+        
     }
     
     public void run() {

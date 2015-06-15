@@ -1,6 +1,5 @@
 package rekkyn.farkle;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class ScoreSet {
@@ -8,24 +7,30 @@ public class ScoreSet {
     private String name;
     private Pattern pattern;
     private int score;
+    private List<Integer> result;
     
     public ScoreSet(String name, Pattern pattern, int score) {
         this.name = name;
         this.pattern = pattern;
+        pattern.setScoreSet(this);
         this.score = score;
     }
     
+    public ScoreSet(ScoreSet base, List<Integer> result) {
+        name = base.name;
+        pattern = base.pattern;
+        score = base.score;
+        this.result = result;
+    }
+    
     public List<ScoreSet> find(int[] roll) {
-        List<ScoreSet> list = new ArrayList<ScoreSet>();
-        int num = pattern.find(roll);
-        for (int i = 0; i < num; i++)
-            list.add(this);
-        
-        return list;
+        return pattern.find(roll);
     }
     
     @Override
     public String toString() {
-        return name;
+        String resultString = "";
+        if (result != null) resultString += result.toString();
+        return name + resultString;
     }
 }
