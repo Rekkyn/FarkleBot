@@ -31,7 +31,28 @@ public class Farkle {
     public void run() {
         Dice dice = new Dice(totalDice);
         System.out.println(dice);
-        for (List<ScoreSet> list : dice.getScoreSetCombinations()) {
+        List<List<ScoreSet>> combinations = new ArrayList<List<ScoreSet>>(dice.getScoreSetCombinations());
+        Collections.sort(combinations, new Comparator<List<ScoreSet>>() {
+            
+            public int compare(List<ScoreSet> l1, List<ScoreSet> l2) {
+                int score1 = 0;
+                for (ScoreSet s : l1) {
+                    score1 += s.getScore();
+                }
+                int score2 = 0;
+                for (ScoreSet s : l2) {
+                    score2 += s.getScore();
+                }
+                if (score1 < score2)
+                    return -1;
+                else if (score1 == score2)
+                    return 0;
+                else if (score1 > score2) return 1;
+                return 0;
+            }
+        });
+        Collections.reverse(combinations);
+        for (List<ScoreSet> list : combinations) {
             int score = 0;
             for (ScoreSet s : list) {
                 score += s.getScore();

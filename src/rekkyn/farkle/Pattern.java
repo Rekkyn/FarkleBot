@@ -17,7 +17,6 @@ public class Pattern {
      *            repeated using the same <code>String</code> to indicate that
      *            these variables need to be the same number. */
     public Pattern(Object... pattern) {
-        if (pattern.length > Farkle.totalDice) throw new IllegalArgumentException("Pattern is too long");
         for (Object o : pattern) {
             if (o instanceof Integer) {
                 int i = (Integer) o;
