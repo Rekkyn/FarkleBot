@@ -5,7 +5,9 @@ import java.util.*;
 public class Farkle {
     
     private Random rand = new Random();
+    /** The total number of dice in each round */
     public static final int totalDice = 6;
+    /** All possible <code>ScoreSet</code>s in the rules of the game */
     public static Set<ScoreSet> scoreSets = new HashSet<ScoreSet>();
     
     public static void main(String[] args) {
@@ -13,6 +15,7 @@ public class Farkle {
         main.run();
     }
     
+    /** Adds all of the <code>ScoreSet</code>s in the rules */
     public Farkle() {
         scoreSets.add(new ScoreSet("1", new Pattern(1), 100));
         scoreSets.add(new ScoreSet("5", new Pattern(5), 50));
@@ -23,7 +26,6 @@ public class Farkle {
         scoreSets.add(new ScoreSet("Straight", new Pattern(1, 2, 3, 4, 5, 6), 1500));
         scoreSets.add(new ScoreSet("Three pairs", new Pattern("X", "X", "Y", "Y", "Z", "Z"), 1500));
         scoreSets.add(new ScoreSet("Two triplets", new Pattern("X", "X", "X", "Y", "Y", "Y"), 2500));
-        
     }
     
     public void run() {
@@ -43,11 +45,15 @@ public class Farkle {
         private int diceNum;
         private int[] roll = new int[totalDice];
         
+        /** Creates a new set of dice and rolls them
+         * 
+         * @param diceNum the number of dice */
         public Dice(int diceNum) {
             this.diceNum = diceNum;
             roll();
         }
         
+        /** Creates a predefined set of dice */
         public Dice(int a, int b, int c, int d, int e, int f) {
             roll[0] = a;
             roll[1] = b;
@@ -57,6 +63,10 @@ public class Farkle {
             roll[5] = f;
         }
         
+        /** Rolls <code>diceNum</code> number of dice and stores the result in
+         * <code>roll</code>
+         * 
+         * @return <code>roll</code> */
         public int[] roll() {
             for (int i = 0; i < totalDice; i++) {
                 roll[i] = i < diceNum ? rand.nextInt(6) + 1 : 0;
@@ -64,6 +74,8 @@ public class Farkle {
             return roll;
         }
         
+        /** @return the set of all possible combinations of <code>ScoreSet</code>
+         *         in the current roll */
         public Set<List<ScoreSet>> getScoreSetCombinations() {
             Set<List<ScoreSet>> combinations = new HashSet<List<ScoreSet>>();
             combinations.add(new ArrayList<ScoreSet>());
@@ -84,6 +96,7 @@ public class Farkle {
                     for (int i : roll)
                         rollList.add(i);
                     
+                    // removes ScoreSets in the current subset from the rollList
                     for (ScoreSet ss : subset) {
                         for (int i : ss.getResult()) {
                             if (rollList.contains(i)) {
@@ -91,6 +104,7 @@ public class Farkle {
                             }
                         }
                     }
+                    // checks if the current item can be added to the subset
                     for (int i : item.getResult()) {
                         if (!rollList.contains(i)) {
                             canAdd = false;
@@ -111,9 +125,12 @@ public class Farkle {
             return combinations;
         }
         
+        /** @return every single <code>ScoreSet</code> that can be found in the
+         *         current roll */
         public List<ScoreSet> findScoreSets() {
             List<ScoreSet> foundScoreSets = new ArrayList<ScoreSet>();
             
+            // removes all 0's from the roll array
             int n = 0;
             for (int i : roll)
                 if (i != 0) n++;
@@ -122,6 +139,7 @@ public class Farkle {
             for (int i : roll)
                 if (i != 0) cleanRoll[j++] = i;
             
+            // checks the roll against every ScoreSet in the rules
             for (ScoreSet scoreSet : scoreSets) {
                 foundScoreSets.addAll(scoreSet.find(cleanRoll));
             }

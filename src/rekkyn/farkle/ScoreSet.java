@@ -3,6 +3,7 @@ package rekkyn.farkle;
 import java.util.Collections;
 import java.util.List;
 
+/** A group of dice that gives points */
 public class ScoreSet {
     
     private String name;
@@ -10,6 +11,11 @@ public class ScoreSet {
     private int score;
     private List<Integer> result;
     
+    /** Creates a new <code>ScoreSet</code>
+     * 
+     * @param name the name of the <code>ScoreSet</code>
+     * @param pattern the <code>Pattern</code> used by the <code>ScoreSet</code>
+     * @param score how many points the <code>ScoreSet</code> is worth */
     public ScoreSet(String name, Pattern pattern, int score) {
         this.name = name;
         this.pattern = pattern;
@@ -17,6 +23,11 @@ public class ScoreSet {
         this.score = score;
     }
     
+    /** Copies an existing <code>ScoreSet</code> and adds the result
+     * 
+     * @param base the existing <code>ScoreSet</code>
+     * @param result the list of dice rolls that belong to the
+     *            <code>ScoreSet</code> */
     public ScoreSet(ScoreSet base, List<Integer> result) {
         name = base.name;
         pattern = base.pattern;
@@ -24,6 +35,9 @@ public class ScoreSet {
         this.result = result;
     }
     
+    /** @param roll
+     * @return a list of <code>ScoreSet</code>s of this <code>ScoreSet</code>
+     *         type in the given roll */
     public List<ScoreSet> find(int[] roll) {
         return pattern.find(roll);
     }
