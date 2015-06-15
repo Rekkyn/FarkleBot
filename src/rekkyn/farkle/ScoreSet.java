@@ -27,6 +27,15 @@ public class ScoreSet {
         return pattern.find(roll);
     }
     
+    public int getScore() {
+        if (name != "3 of a kind") {
+            return score;
+        } else {
+            int i = result.get(0);
+            return 100 * (i == 1 ? 3 : i);
+        }
+    }
+    
     @Override
     public String toString() {
         String resultString = "";

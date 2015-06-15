@@ -21,7 +21,6 @@ public class Pattern {
     
     public List<ScoreSet> find(int[] roll) {
         List<List<Integer>> subsets = getAllSubsets(roll, pattern.size());
-        // System.out.println(subsets);
         List<ScoreSet> scoreSets = new ArrayList<ScoreSet>();
         for (List<Integer> subset : subsets) {
             if (match(subset)) scoreSets.add(new ScoreSet(scoreSet, subset));
@@ -38,7 +37,6 @@ public class Pattern {
                 countMap.put(o, 1);
             }
         }
-        // System.out.println(countMap);
         
         Map<Integer, Integer> rollMap = new HashMap<Integer, Integer>();
         for (Integer i : subset) {
@@ -48,7 +46,8 @@ public class Pattern {
                 rollMap.put(i, 1);
             }
         }
-        System.out.println("before" + rollMap);
+        
+        List<Integer> countStrings = new ArrayList<Integer>();
         
         for (Entry<Object, Integer> cursor : countMap.entrySet()) {
             if (cursor.getKey() instanceof Integer) {
@@ -56,14 +55,22 @@ public class Pattern {
                     rollMap.put((Integer) cursor.getKey(), rollMap.get(cursor.getKey()) - cursor.getValue());
                 } else
                     return false;
+            } else if (cursor.getKey() instanceof String) {
+                countStrings.add(cursor.getValue());
             }
         }
-        System.out.println("after" + rollMap);
         
-        /*List one = new ArrayList(subset);
-        List two = new ArrayList(pattern);
-        Collections.sort(one);
-        Collections.sort(two);*/
+        List<Integer> countRollNumbers = new ArrayList<Integer>(rollMap.values());
+        
+        Collections.sort(countStrings);
+        Collections.reverse(countStrings);
+        Collections.sort(countRollNumbers);
+        Collections.reverse(countRollNumbers);
+        
+        for (int i = 0; i < countStrings.size(); i++) {
+            if (countRollNumbers.get(i) < countStrings.get(i)) return false;
+        }
+        
         return true;
     }
     

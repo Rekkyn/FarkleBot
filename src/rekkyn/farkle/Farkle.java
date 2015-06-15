@@ -14,16 +14,20 @@ public class Farkle {
     }
     
     public Farkle() {
-        // scoreSets.add(new ScoreSet("1", new Pattern(1), 100));
-        // scoreSets.add(new ScoreSet("5", new Pattern(5), 50));
-        // scoreSets.add(new ScoreSet("lol", new Pattern("X", "Y", 3, "X"),
-        // 50));
-        scoreSets.add(new ScoreSet("lol", new Pattern(1, 3), 50));
+        scoreSets.add(new ScoreSet("1", new Pattern(1), 100));
+        scoreSets.add(new ScoreSet("5", new Pattern(5), 50));
+        scoreSets.add(new ScoreSet("3 of a kind", new Pattern("X", "X", "X"), 300));
+        scoreSets.add(new ScoreSet("4 of a kind", new Pattern("X", "X", "X", "X"), 1000));
+        scoreSets.add(new ScoreSet("5 of a kind", new Pattern("X", "X", "X", "X", "X"), 2000));
+        scoreSets.add(new ScoreSet("5 of a kind", new Pattern("X", "X", "X", "X", "X", "X"), 3000));
+        scoreSets.add(new ScoreSet("Straight", new Pattern(1, 2, 3, 4, 5, 6), 1500));
+        scoreSets.add(new ScoreSet("Three pairs", new Pattern("X", "X", "Y", "Y", "Z", "Z"), 1500));
+        scoreSets.add(new ScoreSet("Two triplets", new Pattern("X", "X", "X", "Y", "Y", "Y"), 2500));
         
     }
     
     public void run() {
-        Dice dice = new Dice(1, 1, 3, 4, 5, 0);
+        Dice dice = new Dice(totalDice);
         System.out.println(dice);
         List<ScoreSet> scores = dice.findScoreSets();
         System.out.println(scores);
