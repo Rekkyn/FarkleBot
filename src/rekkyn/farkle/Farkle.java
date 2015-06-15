@@ -26,6 +26,7 @@ public class Farkle {
         scoreSets.add(new ScoreSet("Straight", new Pattern(1, 2, 3, 4, 5, 6), 1500));
         scoreSets.add(new ScoreSet("Three pairs", new Pattern("X", "X", "Y", "Y", "Z", "Z"), 1500));
         scoreSets.add(new ScoreSet("Two triplets", new Pattern("X", "X", "X", "Y", "Y", "Y"), 2500));
+        getRollChances();
     }
     
     public void run() {
@@ -59,6 +60,55 @@ public class Farkle {
             }
             System.out.println(list + " " + score);
         }
+    }
+    
+    /** @return a list of mappings of how often each roll occurs in a number of
+     *         dice that equals the index of the list + 1. The total number of
+     *         rolls is mapped from the empty list. */
+    private List<Map<List<Integer>, Integer>> getRollChances() {
+        List<Map<List<Integer>, Integer>> mapByNum = new ArrayList<Map<List<Integer>, Integer>>(6);
+        for (int i = 1; i <= 6; i++) {
+            Map<List<Integer>, Integer> map = n_for(0, new int[0], i, new HashMap<List<Integer>, Integer>());
+            mapByNum.add(map);
+        }
+        return mapByNum;
+    }
+    
+    /** A recursive function for the <code>getRollChances</code> method
+     * 
+     * @return a mapping of how often each roll occurs in a number of dice equal
+     *         to <code>diceNum</code>
+     * @see #getRollChances() */
+    private Map<List<Integer>, Integer> n_for(int level, int[] indices, int diceNum, Map<List<Integer>, Integer> map) {
+        if (level == diceNum) {
+            List<Integer> roll = new ArrayList<Integer>();
+            for (int i : indices) {
+                roll.add(i);
+            }
+            Collections.sort(roll);
+            if (map.containsKey(roll)) {
+                map.put(new ArrayList<Integer>(roll), map.get(roll) + 1);
+            } else {
+                map.put(new ArrayList<Integer>(roll), 1);
+            }
+            ArrayList<Integer> blankList = new ArrayList<Integer>();
+            if (map.containsKey(blankList)) {
+                map.put(blankList, map.get(blankList) + 1);
+            } else {
+                map.put(blankList, 1);
+            }
+            return map;
+        } else {
+            int newLevel = level + 1;
+            int[] newIndices = new int[newLevel];
+            System.arraycopy(indices, 0, newIndices, 0, level);
+            newIndices[level] = 1;
+            while (newIndices[level] <= 6) {
+                n_for(newLevel, newIndices, diceNum, map);
+                ++newIndices[level];
+            }
+        }
+        return map;
     }
     
     public class Dice {
