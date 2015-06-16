@@ -51,8 +51,20 @@ public class ScoreSet {
         }
     }
     
+    public int getMaxScore() {
+        if (name != "3 of a kind") {
+            return getScore();
+        } else {
+            return 600;
+        }
+    }
+    
     public List<Integer> getResult() {
         return result;
+    }
+    
+    public Pattern getPattern() {
+        return pattern;
     }
     
     public static int getScoreFromList(List<ScoreSet> list) {

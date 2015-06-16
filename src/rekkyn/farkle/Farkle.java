@@ -51,7 +51,11 @@ public class Farkle {
             }
         });
         Collections.reverse(combinations);
+        // for (List<ScoreSet> list : combinations) {
+        // System.out.println(list + " " + ScoreSet.getScoreFromList(list));
+        // }
         pruneOptions(combinations);
+        // System.out.println("---");
         for (List<ScoreSet> list : combinations) {
             System.out.println(list + " " + ScoreSet.getScoreFromList(list));
         }
@@ -112,7 +116,8 @@ public class Farkle {
     
     /** Removes all lists of <code>ScoreSet</code>s from the given list that have
      * the same number of dice and fewer points than another list of
-     * <code>ScoreSet</code>s
+     * <code>ScoreSet</code>s, and removes all lists of <code>ScoreSet</code>s
+     * that have too few points to be as worth as much as larger rolls
      * 
      * @param options */
     private void pruneOptions(List<List<ScoreSet>> options) {
@@ -125,12 +130,33 @@ public class Farkle {
                     } else {
                         if (!indexesToRemove.contains(i)) indexesToRemove.add(i);
                     }
+                } else if (ScoreSet.getTotalDice(options.get(i)) > ScoreSet.getTotalDice(options.get(j))) {
+                    int difference = ScoreSet.getTotalDice(options.get(i)) - ScoreSet.getTotalDice(options.get(j));
+                    if (ScoreSet.getScoreFromList(options.get(i)) > ScoreSet.getScoreFromList(options.get(j)) + maxScore(difference)
+                            && !indexesToRemove.contains(j)) indexesToRemove.add(j);
+                } else if (ScoreSet.getTotalDice(options.get(j)) > ScoreSet.getTotalDice(options.get(i))) {
+                    int difference = ScoreSet.getTotalDice(options.get(j)) - ScoreSet.getTotalDice(options.get(i));
+                    if (ScoreSet.getScoreFromList(options.get(j)) > ScoreSet.getScoreFromList(options.get(i)) + maxScore(difference)
+                            && !indexesToRemove.contains(i)) indexesToRemove.add(i);
                 }
             }
         }
         Collections.sort(indexesToRemove, Collections.reverseOrder());
-        for (int i : indexesToRemove)
+        for (int i : indexesToRemove) {
             options.remove(i);
+        }
+    }
+    
+    /** @return the maximum possible score from <code>n</code> dice */
+    protected int maxScore(int n) {
+        if (n == 0) return 0;
+        int max = 0;
+        for (ScoreSet s : scoreSets) {
+            if (s.getPattern().getLength() > n) continue;
+            if (s.getMaxScore() + maxScore(n - s.getPattern().getLength()) > max)
+                max = s.getMaxScore() + maxScore(n - s.getPattern().getLength());;
+        }
+        return max;
     }
     
     /** @param options the list of options to choose from
@@ -145,6 +171,7 @@ public class Farkle {
         }
         if (options.size() == 1) return options.get(0);
         pruneOptions(options);
+        
         float topScore = score;
         List<ScoreSet> bestOption = new ArrayList<ScoreSet>();
         for (List<ScoreSet> option : options) {

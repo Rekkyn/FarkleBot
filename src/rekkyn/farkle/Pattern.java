@@ -126,4 +126,8 @@ public class Pattern {
     public void setScoreSet(ScoreSet scoreSet) {
         this.scoreSet = scoreSet;
     }
+    
+    public int getLength() {
+        return pattern.size();
+    }
 }

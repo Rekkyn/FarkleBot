@@ -12,8 +12,7 @@ public class TestFarkle {
         assertEquals(f.getAverageScore(100, 1), 58.333, 0.1);
         assertEquals(f.getAverageScore(0, 1), 25, 0.1);
         assertEquals(f.getAverageScore(50, 1), 41.666, 0.1);
-        System.out.println(f.getAverageScore(5000, 1));
-        System.out.println(f.getAverageScore(300, 2));
+        System.out.println(f.maxScore(0));
     }
     
 }
