@@ -55,6 +55,22 @@ public class ScoreSet {
         return result;
     }
     
+    public static int getScoreFromList(List<ScoreSet> list) {
+        int score = 0;
+        for (ScoreSet s : list) {
+            score += s.getScore();
+        }
+        return score;
+    }
+    
+    public static int getTotalDice(List<ScoreSet> list) {
+        int total = 0;
+        for (ScoreSet s : list) {
+            total += s.getResult().size();
+        }
+        return total;
+    }
+    
     @Override
     public String toString() {
         String resultString = "";

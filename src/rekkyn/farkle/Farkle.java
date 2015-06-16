@@ -1,6 +1,7 @@
 package rekkyn.farkle;
 
 import java.util.*;
+import java.util.Map.Entry;
 
 public class Farkle {
     
@@ -9,6 +10,10 @@ public class Farkle {
     public static final int totalDice = 6;
     /** All possible <code>ScoreSet</code>s in the rules of the game */
     public static Set<ScoreSet> scoreSets = new HashSet<ScoreSet>();
+    private static List<Map<List<Integer>, Integer>> rollChances = getRollChances();
+    
+    private static final boolean DEBUG = false;
+    private String indent = "";
     
     public static void main(String[] args) {
         Farkle main = new Farkle();
@@ -26,24 +31,17 @@ public class Farkle {
         scoreSets.add(new ScoreSet("Straight", new Pattern(1, 2, 3, 4, 5, 6), 1500));
         scoreSets.add(new ScoreSet("Three pairs", new Pattern("X", "X", "Y", "Y", "Z", "Z"), 1500));
         scoreSets.add(new ScoreSet("Two triplets", new Pattern("X", "X", "X", "Y", "Y", "Y"), 2500));
-        getRollChances();
     }
     
     public void run() {
-        Dice dice = new Dice(totalDice);
+        Dice dice = new Dice(1, 1, 0, 0, 0, 0);
         System.out.println(dice);
         List<List<ScoreSet>> combinations = new ArrayList<List<ScoreSet>>(dice.getScoreSetCombinations());
         Collections.sort(combinations, new Comparator<List<ScoreSet>>() {
             
             public int compare(List<ScoreSet> l1, List<ScoreSet> l2) {
-                int score1 = 0;
-                for (ScoreSet s : l1) {
-                    score1 += s.getScore();
-                }
-                int score2 = 0;
-                for (ScoreSet s : l2) {
-                    score2 += s.getScore();
-                }
+                int score1 = ScoreSet.getScoreFromList(l1);
+                int score2 = ScoreSet.getScoreFromList(l2);
                 if (score1 < score2)
                     return -1;
                 else if (score1 == score2)
@@ -53,19 +51,20 @@ public class Farkle {
             }
         });
         Collections.reverse(combinations);
+        pruneOptions(combinations);
         for (List<ScoreSet> list : combinations) {
-            int score = 0;
-            for (ScoreSet s : list) {
-                score += s.getScore();
-            }
-            System.out.println(list + " " + score);
+            System.out.println(list + " " + ScoreSet.getScoreFromList(list));
         }
+        System.out.println("------------------------");
+        // System.out.println(getBestOption(combinations, 0, totalDice));
+        for (int i = 0; i <= 1000; i += 50)
+            System.out.print("(" + i + ", " + getAverageScore(i, 3) + ") ");
     }
     
     /** @return a list of mappings of how often each roll occurs in a number of
      *         dice that equals the index of the list + 1. The total number of
      *         rolls is mapped from the empty list. */
-    private List<Map<List<Integer>, Integer>> getRollChances() {
+    private static List<Map<List<Integer>, Integer>> getRollChances() {
         List<Map<List<Integer>, Integer>> mapByNum = new ArrayList<Map<List<Integer>, Integer>>(6);
         for (int i = 1; i <= 6; i++) {
             Map<List<Integer>, Integer> map = n_for(0, new int[0], i, new HashMap<List<Integer>, Integer>());
@@ -79,7 +78,7 @@ public class Farkle {
      * @return a mapping of how often each roll occurs in a number of dice equal
      *         to <code>diceNum</code>
      * @see #getRollChances() */
-    private Map<List<Integer>, Integer> n_for(int level, int[] indices, int diceNum, Map<List<Integer>, Integer> map) {
+    private static Map<List<Integer>, Integer> n_for(int level, int[] indices, int diceNum, Map<List<Integer>, Integer> map) {
         if (level == diceNum) {
             List<Integer> roll = new ArrayList<Integer>();
             for (int i : indices) {
@@ -111,6 +110,128 @@ public class Farkle {
         return map;
     }
     
+    /** Removes all lists of <code>ScoreSet</code>s from the given list that have
+     * the same number of dice and fewer points than another list of
+     * <code>ScoreSet</code>s
+     * 
+     * @param options */
+    private void pruneOptions(List<List<ScoreSet>> options) {
+        List<Integer> indexesToRemove = new ArrayList<Integer>();
+        for (int i = 0; i < options.size(); i++) {
+            for (int j = i + 1; j < options.size(); j++) {
+                if (ScoreSet.getTotalDice(options.get(i)) == ScoreSet.getTotalDice(options.get(j))) {
+                    if (ScoreSet.getScoreFromList(options.get(i)) > ScoreSet.getScoreFromList(options.get(j))) {
+                        if (!indexesToRemove.contains(j)) indexesToRemove.add(j);
+                    } else {
+                        if (!indexesToRemove.contains(i)) indexesToRemove.add(i);
+                    }
+                }
+            }
+        }
+        Collections.sort(indexesToRemove, Collections.reverseOrder());
+        for (int i : indexesToRemove)
+            options.remove(i);
+    }
+    
+    /** @param options the list of options to choose from
+     * @param score the current score
+     * @param diceNum the number of dice in play
+     * @return the list of <code>ScoreSet</code>s in the given list that has the
+     *         highest average yield */
+    private List<ScoreSet> getBestOption(List<List<ScoreSet>> options, float score, int diceNum) {
+        
+        if (options.size() == 1) return options.get(0);
+        float topScore = score;
+        List<ScoreSet> bestOption = new ArrayList<ScoreSet>();
+        for (List<ScoreSet> option : options) {
+            float aveScore = getAverageScore(score + ScoreSet.getScoreFromList(option), diceNum - ScoreSet.getTotalDice(option));
+            if (aveScore > topScore) {
+                topScore = aveScore;
+                bestOption = option;
+            }
+        }
+        return bestOption;
+    }
+    
+    /** @param score the score to add to
+     * @param diceLeft how many dice are being rolled
+     * @return the average score given by a number of dice */
+    protected float getAverageScore(float score, int diceLeft) {
+        if (DEBUG) System.out.println(indent + "Get Average Score(" + score + " " + diceLeft + ")");
+        if (diceLeft == 0) {
+            if (DEBUG) System.out.println(indent + "Return Average(" + score + " " + diceLeft + "): " + score);
+            return score;// diceLeft = 6;
+        }
+        float average = 0;
+        int n = 0;
+        Map<List<Integer>, Integer> rollChancesForDice = rollChances.get(diceLeft - 1);
+        for (Entry<List<Integer>, Integer> entry : rollChancesForDice.entrySet()) {
+            if (DEBUG) {
+                indent();
+                System.out.println(indent + "Possible Roll : " + entry.getKey() + " " + entry.getValue());
+                indent();
+            }
+            if (entry.getKey().equals(new ArrayList<Integer>())) {
+                if (DEBUG) {
+                    System.out.println(indent + "This is the total number of rolls");
+                    unindent();
+                    System.out.println(indent + "End Possible Roll: " + entry.getKey() + " " + entry.getValue() + "\n" + indent);
+                    unindent();
+                }
+                continue;
+            }
+            Dice d = new Dice(entry.getKey());
+            List<List<ScoreSet>> options = new ArrayList<List<ScoreSet>>(d.getScoreSetCombinations());
+            if (DEBUG) System.out.println(indent + "options: " + options);
+            float newScore = 0;
+            if (options.size() != 0) {
+                if (DEBUG) {
+                    System.out.println(indent + "~Getting the best option~");
+                    indent();
+                }
+                List<ScoreSet> bestOption = getBestOption(options, score, diceLeft);
+                if (DEBUG) {
+                    unindent();
+                    System.out.println(indent + "Best Option:" + bestOption);
+                }
+                newScore = score + ScoreSet.getScoreFromList(bestOption);
+                if (DEBUG) indent();
+                float newAveScore = getAverageScore(newScore, diceLeft - ScoreSet.getTotalDice(bestOption));
+                if (DEBUG) unindent();
+                if (newAveScore > newScore) newScore = newAveScore;
+            }
+            if (DEBUG) {
+                System.out.println(indent + "Old Average: " + average + ", total: " + n);
+                System.out.println(indent + "New Score: " + newScore);
+            }
+            for (int i = 0; i < entry.getValue(); i++) {
+                if (n == 0) {
+                    average = newScore;
+                    n++;
+                } else {
+                    n++;
+                    average += (newScore - average) / n;
+                }
+            }
+            if (DEBUG) {
+                System.out.println(indent + "Average so far: " + average + ", total: " + n);
+                unindent();
+                System.out.println(indent + "End Possible Roll: " + entry.getKey() + " " + entry.getValue() + "\n" + indent);
+                unindent();
+            }
+        }
+        if (DEBUG) System.out.println(indent + "Return Average(" + score + " " + diceLeft + "): " + average);
+        return average;
+    }
+    
+    private void indent() {
+        indent += "   |";
+    }
+    
+    private void unindent() {
+        indent = indent.substring(4);
+    }
+    
     public class Dice {
         
         private int diceNum;
@@ -132,6 +253,13 @@ public class Farkle {
             roll[3] = d;
             roll[4] = e;
             roll[5] = f;
+        }
+        
+        public Dice(List<Integer> roll) {
+            if (roll.size() > totalDice) throw new IllegalArgumentException("Dice roll can't be greater than the total number of dice");
+            for (int i = 0; i < roll.size(); i++) {
+                this.roll[i] = roll.get(i);
+            }
         }
         
         /** Rolls <code>diceNum</code> number of dice and stores the result in
