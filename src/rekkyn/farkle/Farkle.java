@@ -34,7 +34,7 @@ public class Farkle {
     }
     
     public void run() {
-        Dice dice = new Dice(1, 1, 0, 0, 0, 0);
+        Dice dice = new Dice(totalDice);
         System.out.println(dice);
         List<List<ScoreSet>> combinations = new ArrayList<List<ScoreSet>>(dice.getScoreSetCombinations());
         Collections.sort(combinations, new Comparator<List<ScoreSet>>() {
@@ -56,9 +56,9 @@ public class Farkle {
             System.out.println(list + " " + ScoreSet.getScoreFromList(list));
         }
         System.out.println("------------------------");
-        // System.out.println(getBestOption(combinations, 0, totalDice));
-        for (int i = 0; i <= 1000; i += 50)
-            System.out.print("(" + i + ", " + getAverageScore(i, 3) + ") ");
+        System.out.println(getBestOption(combinations, 0, totalDice));
+        // for (int i = 0; i <= 500; i += 50)
+        // System.out.print("(" + i + ", " + getAverageScore(i, 2) + ") ");
     }
     
     /** @return a list of mappings of how often each roll occurs in a number of
@@ -139,12 +139,26 @@ public class Farkle {
      * @return the list of <code>ScoreSet</code>s in the given list that has the
      *         highest average yield */
     private List<ScoreSet> getBestOption(List<List<ScoreSet>> options, float score, int diceNum) {
-        
+        if (DEBUG) {
+            System.out.println(indent + "~Getting the best option~");
+            System.out.println(indent + options);
+        }
         if (options.size() == 1) return options.get(0);
+        pruneOptions(options);
         float topScore = score;
         List<ScoreSet> bestOption = new ArrayList<ScoreSet>();
         for (List<ScoreSet> option : options) {
-            float aveScore = getAverageScore(score + ScoreSet.getScoreFromList(option), diceNum - ScoreSet.getTotalDice(option));
+            float newScore = score + ScoreSet.getScoreFromList(option);
+            float aveScore = getAverageScore(newScore, diceNum - ScoreSet.getTotalDice(option));
+            if (DEBUG) {
+                indent();
+                System.out.println(indent + "Option: " + option);
+                System.out.println(indent + "getAverageScore " + (score + ScoreSet.getScoreFromList(option)) + " "
+                        + (diceNum - ScoreSet.getTotalDice(option)));
+                System.out.println(indent + aveScore);
+                unindent();
+            }
+            if (newScore > aveScore) aveScore = newScore;
             if (aveScore > topScore) {
                 topScore = aveScore;
                 bestOption = option;
@@ -153,10 +167,17 @@ public class Farkle {
         return bestOption;
     }
     
+    protected float getAverageScore(float score, int diceLeft) {
+        if (diceLeft == 0) return score;
+        if (diceLeft == 1) return 1 / 3F * score + 25;
+        // if (diceLeft == 2) return 5 / 9F * score + 50;
+        return _getAverageScore(score, diceLeft);
+    }
+    
     /** @param score the score to add to
      * @param diceLeft how many dice are being rolled
      * @return the average score given by a number of dice */
-    protected float getAverageScore(float score, int diceLeft) {
+    private float _getAverageScore(float score, int diceLeft) {
         if (DEBUG) System.out.println(indent + "Get Average Score(" + score + " " + diceLeft + ")");
         if (diceLeft == 0) {
             if (DEBUG) System.out.println(indent + "Return Average(" + score + " " + diceLeft + "): " + score);
@@ -185,10 +206,7 @@ public class Farkle {
             if (DEBUG) System.out.println(indent + "options: " + options);
             float newScore = 0;
             if (options.size() != 0) {
-                if (DEBUG) {
-                    System.out.println(indent + "~Getting the best option~");
-                    indent();
-                }
+                if (DEBUG) indent();
                 List<ScoreSet> bestOption = getBestOption(options, score, diceLeft);
                 if (DEBUG) {
                     unindent();
@@ -201,6 +219,7 @@ public class Farkle {
                 if (newAveScore > newScore) newScore = newAveScore;
             }
             if (DEBUG) {
+                System.out.println(indent + "Score: " + score);
                 System.out.println(indent + "Old Average: " + average + ", total: " + n);
                 System.out.println(indent + "New Score: " + newScore);
             }
