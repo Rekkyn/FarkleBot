@@ -11,9 +11,11 @@ public class Farkle {
     /** All possible <code>ScoreSet</code>s in the rules of the game */
     public static Set<ScoreSet> scoreSets = new HashSet<ScoreSet>();
     private static List<Map<List<Integer>, Integer>> rollChances = getRollChances();
+    private static List<Map<Float, Float>> averageScores = new ArrayList<Map<Float, Float>>();
     
     private static final boolean DEBUG = false;
     private String indent = "";
+    private boolean shouldRoll = false;
     
     public static void main(String[] args) {
         Farkle main = new Farkle();
@@ -31,11 +33,13 @@ public class Farkle {
         scoreSets.add(new ScoreSet("Straight", new Pattern(1, 2, 3, 4, 5, 6), 1500));
         scoreSets.add(new ScoreSet("Three pairs", new Pattern("X", "X", "Y", "Y", "Z", "Z"), 1500));
         scoreSets.add(new ScoreSet("Two triplets", new Pattern("X", "X", "X", "Y", "Y", "Y"), 2500));
+        for (int i = 0; i < totalDice; i++)
+            averageScores.add(new HashMap<Float, Float>());
     }
     
     public void run() {
+        float score = 0;
         Dice dice = new Dice(totalDice);
-        System.out.println(dice);
         List<List<ScoreSet>> combinations = new ArrayList<List<ScoreSet>>(dice.getScoreSetCombinations());
         Collections.sort(combinations, new Comparator<List<ScoreSet>>() {
             
@@ -51,18 +55,16 @@ public class Farkle {
             }
         });
         Collections.reverse(combinations);
-        // for (List<ScoreSet> list : combinations) {
-        // System.out.println(list + " " + ScoreSet.getScoreFromList(list));
-        // }
         pruneOptions(combinations);
-        // System.out.println("---");
+        
+        System.out.println("Score: " + score);
+        System.out.println("Roll: " + dice);
         for (List<ScoreSet> list : combinations) {
             System.out.println(list + " " + ScoreSet.getScoreFromList(list));
         }
         System.out.println("------------------------");
-        System.out.println(getBestOption(combinations, 0, totalDice));
-        // for (int i = 0; i <= 500; i += 50)
-        // System.out.print("(" + i + ", " + getAverageScore(i, 2) + ") ");
+        System.out.println(getBestOption(combinations, score, dice.getRollLength()));
+        System.out.println(shouldRoll ? "Roll again!" : "Stop");
     }
     
     /** @return a list of mappings of how often each roll occurs in a number of
@@ -130,15 +132,15 @@ public class Farkle {
                     } else {
                         if (!indexesToRemove.contains(i)) indexesToRemove.add(i);
                     }
-                } else if (ScoreSet.getTotalDice(options.get(i)) > ScoreSet.getTotalDice(options.get(j))) {
+                } /*else if (ScoreSet.getTotalDice(options.get(i)) > ScoreSet.getTotalDice(options.get(j))) {
                     int difference = ScoreSet.getTotalDice(options.get(i)) - ScoreSet.getTotalDice(options.get(j));
                     if (ScoreSet.getScoreFromList(options.get(i)) > ScoreSet.getScoreFromList(options.get(j)) + maxScore(difference)
                             && !indexesToRemove.contains(j)) indexesToRemove.add(j);
-                } else if (ScoreSet.getTotalDice(options.get(j)) > ScoreSet.getTotalDice(options.get(i))) {
+                  } else if (ScoreSet.getTotalDice(options.get(j)) > ScoreSet.getTotalDice(options.get(i))) {
                     int difference = ScoreSet.getTotalDice(options.get(j)) - ScoreSet.getTotalDice(options.get(i));
                     if (ScoreSet.getScoreFromList(options.get(j)) > ScoreSet.getScoreFromList(options.get(i)) + maxScore(difference)
                             && !indexesToRemove.contains(i)) indexesToRemove.add(i);
-                }
+                  }*/
             }
         }
         Collections.sort(indexesToRemove, Collections.reverseOrder());
@@ -169,7 +171,6 @@ public class Farkle {
             System.out.println(indent + "~Getting the best option~");
             System.out.println(indent + options);
         }
-        if (options.size() == 1) return options.get(0);
         pruneOptions(options);
         
         float topScore = score;
@@ -185,10 +186,15 @@ public class Farkle {
                 System.out.println(indent + aveScore);
                 unindent();
             }
-            if (newScore > aveScore) aveScore = newScore;
+            boolean reroll = true;
+            if (newScore > aveScore) {
+                aveScore = newScore;
+                reroll = false; // TODO: this.
+            }
             if (aveScore > topScore) {
                 topScore = aveScore;
                 bestOption = option;
+                shouldRoll = reroll;
             }
         }
         return bestOption;
@@ -196,9 +202,12 @@ public class Farkle {
     
     protected float getAverageScore(float score, int diceLeft) {
         if (diceLeft == 0) return score;
-        if (diceLeft == 1) return 1 / 3F * score + 25;
-        // if (diceLeft == 2) return 5 / 9F * score + 50;
-        return _getAverageScore(score, diceLeft);
+        if (averageScores.get(diceLeft - 1).containsKey(score)) {
+            return averageScores.get(diceLeft - 1).get(score);
+        }
+        float averageScore = _getAverageScore(score, diceLeft);
+        averageScores.get(diceLeft - 1).put(score, averageScore);
+        return averageScore;
     }
     
     /** @param score the score to add to
@@ -292,13 +301,8 @@ public class Farkle {
         }
         
         /** Creates a predefined set of dice */
-        public Dice(int a, int b, int c, int d, int e, int f) {
-            roll[0] = a;
-            roll[1] = b;
-            roll[2] = c;
-            roll[3] = d;
-            roll[4] = e;
-            roll[5] = f;
+        public Dice(int... ints) {
+            roll = ints;
         }
         
         public Dice(List<Integer> roll) {
@@ -393,6 +397,10 @@ public class Farkle {
         
         public void setDiceNum(int diceNum) {
             this.diceNum = diceNum;
+        }
+        
+        public int getRollLength() {
+            return roll.length;
         }
         
         @Override
