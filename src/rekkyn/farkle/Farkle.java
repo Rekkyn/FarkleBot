@@ -16,6 +16,7 @@ public class Farkle {
     private static final boolean DEBUG = false;
     private String indent = "";
     private boolean shouldRoll = false;
+    private static final int MAXREROLLS = 2;
     
     public static void main(String[] args) {
         Farkle main = new Farkle();
@@ -29,7 +30,7 @@ public class Farkle {
         scoreSets.add(new ScoreSet("3 of a kind", new Pattern("X", "X", "X"), 300));
         scoreSets.add(new ScoreSet("4 of a kind", new Pattern("X", "X", "X", "X"), 1000));
         scoreSets.add(new ScoreSet("5 of a kind", new Pattern("X", "X", "X", "X", "X"), 2000));
-        scoreSets.add(new ScoreSet("5 of a kind", new Pattern("X", "X", "X", "X", "X", "X"), 3000));
+        scoreSets.add(new ScoreSet("6 of a kind", new Pattern("X", "X", "X", "X", "X", "X"), 3000));
         scoreSets.add(new ScoreSet("Straight", new Pattern(1, 2, 3, 4, 5, 6), 1500));
         scoreSets.add(new ScoreSet("Three pairs", new Pattern("X", "X", "Y", "Y", "Z", "Z"), 1500));
         scoreSets.add(new ScoreSet("Two triplets", new Pattern("X", "X", "X", "Y", "Y", "Y"), 2500));
@@ -161,51 +162,60 @@ public class Farkle {
         return max;
     }
     
+    private List<ScoreSet> getBestOption(List<List<ScoreSet>> options, float score, int diceNum) {
+        return getBestOption(options, score, diceNum, 0);
+    }
+    
     /** @param options the list of options to choose from
      * @param score the current score
      * @param diceNum the number of dice in play
      * @return the list of <code>ScoreSet</code>s in the given list that has the
      *         highest average yield */
-    private List<ScoreSet> getBestOption(List<List<ScoreSet>> options, float score, int diceNum) {
+    private List<ScoreSet> getBestOption(List<List<ScoreSet>> options, float score, int diceNum, int rerolls) {
         if (DEBUG) {
             System.out.println(indent + "~Getting the best option~");
             System.out.println(indent + options);
         }
         pruneOptions(options);
-        
         float topScore = score;
+        boolean shouldRoll = false;
         List<ScoreSet> bestOption = new ArrayList<ScoreSet>();
         for (List<ScoreSet> option : options) {
             float newScore = score + ScoreSet.getScoreFromList(option);
-            float aveScore = getAverageScore(newScore, diceNum - ScoreSet.getTotalDice(option));
+            float aveScore = getAverageScore(newScore, diceNum - ScoreSet.getTotalDice(option), rerolls);
             if (DEBUG) {
                 indent();
                 System.out.println(indent + "Option: " + option);
-                System.out.println(indent + "getAverageScore " + (score + ScoreSet.getScoreFromList(option)) + " "
-                        + (diceNum - ScoreSet.getTotalDice(option)));
+                System.out.println(indent + "getAverageScore " + newScore + " " + (diceNum - ScoreSet.getTotalDice(option)));
                 System.out.println(indent + aveScore);
                 unindent();
             }
             boolean reroll = true;
             if (newScore > aveScore) {
                 aveScore = newScore;
-                reroll = false; // TODO: this.
+                reroll = false;
             }
             if (aveScore > topScore) {
                 topScore = aveScore;
                 bestOption = option;
-                shouldRoll = reroll;
+                shouldRoll = reroll; // TODO: this.
             }
         }
+        this.shouldRoll = shouldRoll;
         return bestOption;
     }
     
-    protected float getAverageScore(float score, int diceLeft) {
-        if (diceLeft == 0) return score;
+    protected float getAverageScore(float score, int diceLeft, int rerolls) {
+        if (diceLeft == 0) {
+            if (++rerolls <= MAXREROLLS) {
+                diceLeft = totalDice;
+            } else
+                return score;
+        }
         if (averageScores.get(diceLeft - 1).containsKey(score)) {
             return averageScores.get(diceLeft - 1).get(score);
         }
-        float averageScore = _getAverageScore(score, diceLeft);
+        float averageScore = _getAverageScore(score, diceLeft, rerolls);
         averageScores.get(diceLeft - 1).put(score, averageScore);
         return averageScore;
     }
@@ -213,12 +223,8 @@ public class Farkle {
     /** @param score the score to add to
      * @param diceLeft how many dice are being rolled
      * @return the average score given by a number of dice */
-    private float _getAverageScore(float score, int diceLeft) {
+    private float _getAverageScore(float score, int diceLeft, int rerolls) {
         if (DEBUG) System.out.println(indent + "Get Average Score(" + score + " " + diceLeft + ")");
-        if (diceLeft == 0) {
-            if (DEBUG) System.out.println(indent + "Return Average(" + score + " " + diceLeft + "): " + score);
-            return score;// diceLeft = 6;
-        }
         float average = 0;
         int n = 0;
         Map<List<Integer>, Integer> rollChancesForDice = rollChances.get(diceLeft - 1);
@@ -243,14 +249,14 @@ public class Farkle {
             float newScore = 0;
             if (options.size() != 0) {
                 if (DEBUG) indent();
-                List<ScoreSet> bestOption = getBestOption(options, score, diceLeft);
+                List<ScoreSet> bestOption = getBestOption(options, score, diceLeft, rerolls);
                 if (DEBUG) {
                     unindent();
                     System.out.println(indent + "Best Option:" + bestOption);
                 }
                 newScore = score + ScoreSet.getScoreFromList(bestOption);
                 if (DEBUG) indent();
-                float newAveScore = getAverageScore(newScore, diceLeft - ScoreSet.getTotalDice(bestOption));
+                float newAveScore = getAverageScore(newScore, diceLeft - ScoreSet.getTotalDice(bestOption), rerolls);
                 if (DEBUG) unindent();
                 if (newAveScore > newScore) newScore = newAveScore;
             }
