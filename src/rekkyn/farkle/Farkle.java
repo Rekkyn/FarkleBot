@@ -39,33 +39,49 @@ public class Farkle {
     }
     
     public void run() {
-        float score = 0;
-        Dice dice = new Dice(totalDice);
-        List<List<ScoreSet>> combinations = new ArrayList<List<ScoreSet>>(dice.getScoreSetCombinations());
-        Collections.sort(combinations, new Comparator<List<ScoreSet>>() {
-            
-            public int compare(List<ScoreSet> l1, List<ScoreSet> l2) {
-                int score1 = ScoreSet.getScoreFromList(l1);
-                int score2 = ScoreSet.getScoreFromList(l2);
-                if (score1 < score2)
-                    return -1;
-                else if (score1 == score2)
-                    return 0;
-                else if (score1 > score2) return 1;
-                return 0;
+        Scanner in = new Scanner(System.in);
+        int score = 0;
+        do {
+            Dice dice = null;
+            boolean invalidInput = false;
+            do {
+                invalidInput = false;
+                List<Integer> roll = new ArrayList<Integer>();
+                System.out.println("Enter dice");
+                String[] rollString = in.nextLine().split("\\s+");
+                try {
+                    for (String s : rollString) {
+                        int i = Integer.parseInt(s);
+                        if (i < 1 || i > 6) throw new Exception();
+                        roll.add(i);
+                    }
+                } catch (Exception e) {
+                    System.out.println("Dice must be numbers between 1 and 6");
+                    invalidInput = true;
+                    continue;
+                }
+                if (roll.size() > totalDice) {
+                    System.out.println("Roll must be " + totalDice + " dice or less");
+                    invalidInput = true;
+                    continue;
+                }
+                dice = new Dice(roll);
+            } while (invalidInput);
+            List<List<ScoreSet>> combinations = new ArrayList<List<ScoreSet>>(dice.getScoreSetCombinations());
+            List<ScoreSet> bestOption = getBestOption(combinations, score, dice.getRollLength());
+            List<Integer> displayOption = new ArrayList<Integer>();
+            for (ScoreSet s : bestOption) {
+                displayOption.addAll(s.getResult());
             }
-        });
-        Collections.reverse(combinations);
-        pruneOptions(combinations);
-        
-        System.out.println("Score: " + score);
-        System.out.println("Roll: " + dice);
-        for (List<ScoreSet> list : combinations) {
-            System.out.println(list + " " + ScoreSet.getScoreFromList(list));
-        }
-        System.out.println("------------------------");
-        System.out.println(getBestOption(combinations, score, dice.getRollLength()));
-        System.out.println(shouldRoll ? "Roll again!" : "Stop");
+            Collections.sort(displayOption);
+            String displayString = displayOption.toString();
+            displayString = displayString.substring(1, displayString.length() - 1);
+            System.out.println("Take: " + displayString);
+            score += ScoreSet.getScoreFromList(bestOption);
+            System.out.println(shouldRoll ? "Roll again!" : "Stop");
+            System.out.println("-----------------------");
+            System.out.println("Score: " + score);
+        } while (shouldRoll);
     }
     
     /** @return a list of mappings of how often each roll occurs in a number of
@@ -313,10 +329,10 @@ public class Farkle {
         
         public Dice(List<Integer> roll) {
             if (roll.size() > totalDice) throw new IllegalArgumentException("Dice roll can't be greater than the total number of dice");
-            for (int i = 0; i < roll.size(); i++) {
+            this.roll = new int[roll.size()];
+            for (int i = 0; i < this.roll.length; i++)
                 this.roll[i] = roll.get(i);
             }
-        }
         
         /** Rolls <code>diceNum</code> number of dice and stores the result in
          * <code>roll</code>
